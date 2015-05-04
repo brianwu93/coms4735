@@ -6,4 +6,3 @@ function play(filename)
     [y,Fs] = audioread(filename);
     sound(y,Fs);
 end
-
