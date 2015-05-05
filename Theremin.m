@@ -19,5 +19,36 @@ function Theremin(URL)
         binary = getCleanImage(binary);
     
         % Segment the binary image so we can separate the two hands.
+        [labeled, num] = bwlabel(binary);
+        if num == 2
+            blob1 = (labeled == 1);
+            blob2 = (labeled == 2);
+        else
+            continue;
+        end
+        centroid1 = findCentroid(blob1);
+        centroid2 = findCentroid(blob2);
+        if centroid1(1) < centroid(2)
+            hand1 = centroid1;
+            hand2 = centroid2;
+        else
+            hand1 = centroid2;
+            hand2 = centroid1;
+        end
+        
+        % Determine the height of each hand relative to image size.
     end
+end
+
+function playInstrument(pitch, volume)
+    % Load the audio file.
+    load handel.mat
+    [y,Fs] = audioread(filename);
+    
+    % Scale volume.
+    y = y .* volume;
+    
+    % Determine the note to play.
+    y = y(1:10000, :);
+    sound(y,Fs);
 end
