@@ -39,7 +39,7 @@ function Theremin()
         end
         centroid1 = findCentroid(blob1);
         centroid2 = findCentroid(blob2);
-        if centroid1(1) < centroid(2)
+        if centroid1(1) < centroid2(1)
             hand1 = centroid1;
             hand2 = centroid2;
         else
