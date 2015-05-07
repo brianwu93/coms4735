@@ -1,26 +1,16 @@
 % Test all drum sounds
 function TestDrumSounds()
-    [Crash, HfHat, Kick, Rim, Snare, Tom] = LocateDrumSounds();
+    sounds = LocateDrumSounds();
     
-    play(Crash);
+    play(sounds(1,:));
     pause(0.2);
-    play(HfHat);
+    play(sounds(2,:));
     pause(0.2);
-    play(Kick);
+    play(sounds(3,:));
     pause(0.2);
-    play(Rim);
+    play(sounds(4,:));
     pause(0.2);
-    play(Snare);
+    play(sounds(5,:));
     pause(0.2);
-    play(Tom);
-end
-
-% Locate drum sound files
-function [Crash, HfHat, Kick, Rim, Snare, Tom] = LocateDrumSounds()
-    Crash = 'DrumSounds/Crash.wav';
-    HfHat = 'DrumSounds/HfHat.wav';
-    Kick = 'DrumSounds/Kick.wav';
-    Rim = 'DrumSounds/Rim.wav';
-    Snare = 'DrumSounds/Snare.wav';
-    Tom = 'DrumSounds/Tom.wav';
+    play(sounds(6,:));
 end
