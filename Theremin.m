@@ -1,4 +1,18 @@
 function Theremin()
+    % Preload sound components.
+    load handel.mat
+    global MUSIC;
+    global NOTE_INDEX;
+    global COUNT;
+    NOTE_INDEX = ['C', 'D', 'E', 'F', 'G', 'A', 'B', 'C'];
+    MUSIC = cell(8);
+    for i = 1:8
+        file = strcat('ThereminSounds/', int2str(i), '.aif');
+        [y, ~] = audioread(file);
+        MUSIC{i} = y;
+    end
+    COUNT = 1;
+    
     % Connect to the webcam.
     vid = videoinput('macvideo', 1);
 
@@ -16,7 +30,7 @@ function Theremin()
     target = impixel(rgb2hsv(rgb_image), x, y);
 
     % Pull from the webcam and execute sound at a timed interval.
-    FPS = 10;
+    FPS = 5;
     play = timer('TimerFcn', {@PlayTheremin, vid, target}, 'Period', ...
                  1/FPS, 'ExecutionMode', 'fixedRate', 'BusyMode', 'drop');
 
@@ -24,12 +38,13 @@ function Theremin()
     start(vid);
     start(play);
     uiwait(fig);
-    
+
     % Clean up.
     stop(play);
     delete(play);
     stop(vid);
     delete(vid);
+    clear functions;
 end
 
 function PlayTheremin(obj, event, vid, target)
@@ -40,7 +55,7 @@ function PlayTheremin(obj, event, vid, target)
     current =getdata(vid,1,'uint8');
 
     % Downsample and then convert raw data to HSV.
-    current = imresize(current, 0.5);
+    current = imresize(current, 0.2);
     hsv_image = rgb2hsv(current);
 
     % Convert image to binary to identify the hands.
@@ -53,8 +68,8 @@ function PlayTheremin(obj, event, vid, target)
     for i = 1:num
         objects(i) = sum(labeled(:) == i);
     end
-    num_large_objects = sum(objects > 300);
-    
+    num_large_objects = sum(objects > 150);
+
     if num_large_objects >= 2
         [~, i] = max(objects);
         objects(i) = 0;
@@ -65,7 +80,7 @@ function PlayTheremin(obj, event, vid, target)
         %disp('More than two objects detected.');
         playSound = 0;
     end
-    
+
     if playSound
         hand1 = [-1 -1];
         hand2 = [-1 -1];
@@ -80,7 +95,7 @@ function PlayTheremin(obj, event, vid, target)
         end
 
         % Determine the pitch and volume relative to hand height.
-        height = 360;
+        [height, ~] = size(binary);
         volume = 1.0 - hand1(2) / height;
         pitch = 1.0 - hand2(2) / height;
 
@@ -102,18 +117,18 @@ function PlayTheremin(obj, event, vid, target)
 end
 
 function play(pitch, volume)
-    % Figure out the note to play.
-    file = strcat('ThereminSounds/', int2str(ceil(pitch * 8)), '.aif');
-    
-    % Load the audio file.
-    load handel.mat
-    [y,Fs] = audioread(file);
-    
-    % Scale volume.
-    y = y .* volume;
-    
-    % Play the sound.
-    string = strcat('Playing ', file, ' at ', int2str(volume * 100), '% volume.');
-    disp(string);
-    sound(y,Fs);
+    global COUNT;
+    global MUSIC;
+    global NOTE_INDEX;
+    if ~mod(COUNT, 4)
+        % Figure out the note to play.
+        note = MUSIC{ceil(pitch * 8)};
+
+        % Play the sound.
+        string = sprintf('Playing %s at %s percent volume.', ...
+                         NOTE_INDEX(ceil(pitch * 8)), int2str(volume * 100));
+        disp(string);
+        sound(note .* volume, 44100);
+    end
+    COUNT = COUNT + 1;
 end
