@@ -1,4 +1,7 @@
-function Drum()    
+function Drum()
+    % Get sounds
+    sounds = LocateDrumSounds();
+    
     % Connect to the webcam.
     vid = videoinput('macvideo', 1);
 
@@ -19,8 +22,7 @@ function Drum()
     rgb_image = getsnapshot(vid);
     imshow(rgb_image);
     [x, y] = ginput(1);
-    hsv_image = rgb2hsv(rgb_image);
-    target = impixel(hsv_image, x, y);
+    target = impixel(rgb2hsv(rgb_image), x, y);
     
     % Identify the color of the drum pads to be tracked.
     imshow(rgb_image);
@@ -32,32 +34,32 @@ function Drum()
     end
     
     % Pull from the webcam and execute sound at a timed interval.
-    FPS = 10;
-    play = timer('TimerFcn', {@PlayDrums, vid, target, pad_colors}, 'Period', ...
+    FPS = 5;
+    play = timer('TimerFcn', {@PlayDrums, vid, target, pad_colors, sounds}, 'Period', ...
                  1/FPS, 'ExecutionMode', 'fixedRate', 'BusyMode', 'drop');
              
     % Begin pulling from the webcam.
     start(vid);
     start(play);
     uiwait(fig);
-    
+
     % Clean up.
     stop(play);
     delete(play);
     stop(vid);
     delete(vid);
-    
+    clear functions;
 end
 
-function PlayDrums(obj, event, vid, target, pad_colors)
+function PlayDrums(obj, event, vid, target, pad_colors, sounds)
     persistent image;
     persistent current;
-    playSound = 1;
+    playSound = 1; %
+    twoSticks = 1; %
     trigger(vid);
     current = getdata(vid,1,'uint8');
     binary_pads = zeros(1,4);
     pad_centroids = zeros(4,2);
-    sounds = LocateDrumSounds();
     
     % Downsample and then convert raw data to HSV.
     current = imresize(current, 0.5);
@@ -78,49 +80,62 @@ function PlayDrums(obj, event, vid, target, pad_colors)
     end
     num_large_objects = sum(objects > 300);
 
-    if num_large_objects >= 2 % what if there is only one stick
+    if num_large_objects == 1
+        [~, i] = max(objects);
+        blob1 = (labeled == i);
+        twoSticks = 0;
+    elseif num_large_objects >= 2
         [~, i] = max(objects);
         objects(i) = 0;
         [~, j] = max(objects);
         blob1 = (labeled == i);
         blob2 = (labeled == j);
+    else
+        playSound = 0;
     end
+    
+    if playSound   
+         % Locate drum pads
+        for n = 1:4
+            binary_pads(n) = getSingleColorImage(hsv_image, pad_colors(n));
+            [labeled, num] = bwlabel(binary_pads(n));
+            objects = zeros(num, 1);
+            for i = 1:num
+                objects(i) = sum(labeled(:) == i);
+            end
+            num_large_objects = sum(objects > 300);
 
-    [x1,y1] = findCentroid(blob1);
-    [x2,y2] = findCentroid(blob2);
-    XI = [x1,y1;x2,y2];
+            if num_large_objects >= 1
+                [~, i] = max(objects);
+                drumblob = (labeled == i);
+            end
 
-    % Locate drum pads
-    for n = 1:4
-        binary_pads(n) = getSingleColorImage(hsv_image, pad_colors(n));
-        [labeled, num] = bwlabel(binary_pads(n));
-        objects = zeros(num, 1);
-        for i = 1:num
-            objects(i) = sum(labeled(:) == i);
+            [c1,c2] = findCentroid(drumblob);
+             pad_centroids(n,:) = [c1,c2];
         end
-        num_large_objects = sum(objects > 300);
-
-        if num_large_objects >= 1
-            [~, i] = max(objects);
-            drumblob = (labeled == i);
-        end
-
-        [c1,c2] = findCentroid(drumblob);
-         pad_centroids(n,:) = [c1,c2];
-    end    
-
-    % Find closest pad centroids to drum stick centroids
-    k = dsearchn(pad_centroids,XI);
-
-    play(sounds(k(1),:));
-    play(sounds(k(2),:));  
+        
+        % Find closest pad centroids to drum stick centroids
+        if twoSticks
+            [x1,y1] = findCentroid(blob1);
+            [x2,y2] = findCentroid(blob2);
+            XI = [x1,y1;x2,y2];
+            k = dsearchn(pad_centroids,XI);
+            play(sounds(k(1),:));
+            play(sounds(k(2),:));  
+        else
+            [x1,y1] = findCentroid(blob1);
+            XI = [x1,y1];
+            k = dsearchn(pad_centroids,XI);
+            play(sounds(k(1),:));
+        end     
+    end
     
     % Display the video showing only the tracking objects
     if playSound
         binary = blob1 + blob2;
     end
     if isempty(image)
-       image =imagesc(binary);
+       image = imagesc(binary);
        title('Drum CV Capture');
     else
        % Only update if needed.
