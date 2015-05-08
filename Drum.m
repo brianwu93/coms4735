@@ -11,6 +11,7 @@ function Drum()
     set(vid,'FramesPerTrigger',1);
     set(vid,'TriggerRepeat',Inf);
     set(vid,'ReturnedColorSpace','rgb');
+    set(vid,'Timeout',50); %set the Timeout property of VIDEOINPUT object 'vid' to 50 seconds
     triggerconfig(vid, 'Manual');
     fig = figure(1);
     
@@ -38,7 +39,7 @@ function Drum()
     C(1,2) = {pad_colors};
 
     % Pull from the webcam and execute sound at a timed interval.
-    FPS = 5;
+    FPS = 3;
     play = timer('TimerFcn', {@PlayDrums, vid, C}, 'Period', ...
                  1/FPS, 'ExecutionMode', 'fixedRate', 'BusyMode', 'drop');
              
@@ -69,11 +70,12 @@ function PlayDrums(obj, event, vid, C)
     sounds = C{1,3};
    
     % Downsample and then convert raw data to HSV.
-    current = imresize(current, 0.5);
+    current = imresize(current, 0.2);
     hsv_image = rgb2hsv(current);
 
     % Convert image to binary to identify the sticks.
-    binary_stick = getSingleColorImage(hsv_image, target);
+    binary_stick = getThresholdImage(hsv_image, target);
+    binary_stick = getCleanImage(binary_stick);
 
 %         % Erode to remove noise
 %         se = strel('disk', 7);        
