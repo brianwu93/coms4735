@@ -28,9 +28,9 @@ function Drum()
     imshow(rgb_image);
     [a, b] = ginput(4);
     hsv_image = rgb2hsv(rgb_image);
-    pad_colors = zeros(1,4);
+    pad_colors = zeros(4,3);
     for n = 1:4
-    	pad_colors(n) = impixel(hsv_image, a(n), b(n));
+    	pad_colors(n,:) = impixel(hsv_image, a(n), b(n));
     end
     
     % Pull from the webcam and execute sound at a timed interval.
