@@ -10,7 +10,7 @@ function Drum()
     Crash = 'DrumSounds/1.wav';
     HfHat = 'DrumSounds/2.wav';
     Kick = 'DrumSounds/3.wav';
-    Rim = 'DrumSounds/4.wav';
+    Rim = 'DrumSounds/5.wav';
     sounds = [Crash; HfHat; Kick; Rim];
     NOTE_INDEX = ['Crash', 'HfHat', 'Kick', 'Rim'];
     MUSIC = cell(4);
