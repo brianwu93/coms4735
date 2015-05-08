@@ -30,11 +30,9 @@ function Drum()
     triggerconfig(vid, 'Manual');
     fig = figure(1);
     
-    % Delay a few seconds to allow camera repositioning
-    %pause(3);
-    
     % All sounds play to represent start
-    %TestDrumSounds();
+    TestDrumSounds();
+    pause(1);
     
     % Identify the color of the drum sticks to be tracked.
     rgb_image = getsnapshot(vid);
@@ -91,14 +89,14 @@ function Drum()
     clear functions;
 end
 
-function PlayDrums(obj, event, vid, colors)
+function PlayDrums(~, ~, vid, colors)
     global MUSIC;
     global COUNT;
     global FPS;
     global CENTROIDS;
     persistent image;
     persistent current;
-    playSound = 1; %
+    playSound = 1;
     trigger(vid);
     current = getdata(vid,1,'uint8');
     
