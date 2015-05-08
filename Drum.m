@@ -115,25 +115,24 @@ function PlayDrums(obj, event, vid, target, pad_colors, sounds)
         end
         
         % Find closest pad centroids to drum stick centroids
+        % Display the video showing only the tracking objects
         if twoSticks
             [x1,y1] = findCentroid(blob1);
             [x2,y2] = findCentroid(blob2);
             XI = [x1,y1;x2,y2];
             k = dsearchn(pad_centroids,XI);
             play(sounds(k(1),:));
-            play(sounds(k(2),:));  
+            play(sounds(k(2),:));
+            binary = blob1 + blob2;
         else
             [x1,y1] = findCentroid(blob1);
             XI = [x1,y1];
             k = dsearchn(pad_centroids,XI);
             play(sounds(k(1),:));
+            binary = blob1;
         end     
     end
     
-    % Display the video showing only the tracking objects
-    if playSound
-        binary = blob1 + blob2;
-    end
     if isempty(image)
        image = imagesc(binary);
        title('Drum CV Capture');
