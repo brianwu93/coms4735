@@ -1,6 +1,8 @@
 function Drum()
     % Get sounds
+    C = cell(1,3);
     sounds = LocateDrumSounds();
+    C(1,3) = {sounds};
     
     % Connect to the webcam.
     vid = videoinput('macvideo', 1);
@@ -23,6 +25,7 @@ function Drum()
     imshow(rgb_image);
     [x, y] = ginput(1);
     target = impixel(rgb2hsv(rgb_image), x, y);
+    C(1,1) = {target};
     
     % Identify the color of the drum pads to be tracked.
     imshow(rgb_image);
@@ -32,10 +35,11 @@ function Drum()
     for n = 1:4
     	pad_colors(n,:) = impixel(hsv_image, a(n), b(n));
     end
-    
+    C(1,2) = {pad_colors};
+
     % Pull from the webcam and execute sound at a timed interval.
     FPS = 5;
-    play = timer('TimerFcn', {@PlayDrums, vid, target, pad_colors, sounds}, 'Period', ...
+    play = timer('TimerFcn', {@PlayDrums, vid, C}, 'Period', ...
                  1/FPS, 'ExecutionMode', 'fixedRate', 'BusyMode', 'drop');
              
     % Begin pulling from the webcam.
@@ -51,7 +55,7 @@ function Drum()
     clear functions;
 end
 
-function PlayDrums(obj, event, vid, target, pad_colors, sounds)
+function PlayDrums(obj, event, vid, C)
     persistent image;
     persistent current;
     playSound = 1; %
@@ -60,7 +64,10 @@ function PlayDrums(obj, event, vid, target, pad_colors, sounds)
     current = getdata(vid,1,'uint8');
     binary_pads = zeros(1,4);
     pad_centroids = zeros(4,2);
-    
+    target = C{1,1};
+    pad_colors = C{1,2};
+    sounds = C{1,3};
+   
     % Downsample and then convert raw data to HSV.
     current = imresize(current, 0.5);
     hsv_image = rgb2hsv(current);
@@ -123,21 +130,21 @@ function PlayDrums(obj, event, vid, target, pad_colors, sounds)
             k = dsearchn(pad_centroids,XI);
             play(sounds(k(1),:));
             play(sounds(k(2),:));
-            binary = blob1 + blob2;
+            binary_image = blob1 + blob2;
         else
             [x1,y1] = findCentroid(blob1);
             XI = [x1,y1];
             k = dsearchn(pad_centroids,XI);
             play(sounds(k(1),:));
-            binary = blob1;
+            binary_image = blob1;
         end     
     end
     
     if isempty(image)
-       image = imagesc(binary);
+       image = imagesc(binary_image);
        title('Drum CV Capture');
     else
        % Only update if needed.
-       set(image,'CData', binary);
+       set(image,'CData', binary_image);
     end
 end
